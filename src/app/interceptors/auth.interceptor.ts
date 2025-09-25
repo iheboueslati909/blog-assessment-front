@@ -24,20 +24,20 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((err: HttpErrorResponse) => {
-      // if (err.status === 401) {
-      //   return authService.refreshToken().pipe(
-      //     switchMap((newToken) => {
-      //       if (newToken) {
-      //         const retryReq = req.clone({
-      //           setHeaders: { Authorization: `Bearer ${newToken}` },
-      //           withCredentials: true,
-      //         });
-      //         return next(retryReq);
-      //       }
-      //       return throwError(() => err);
-      //     })
-      //   );
-      // }
+      if (err.status === 401 && !req.url.includes('/auth/refresh')) {
+        return authService.refreshToken().pipe(
+          switchMap((newToken) => {
+            if (newToken) {
+              const retryReq = req.clone({
+                setHeaders: { Authorization: `Bearer ${newToken}` },
+                withCredentials: true,
+              });
+              return next(retryReq);
+            }
+            return throwError(() => err);
+          })
+        );
+      }
       return throwError(() => err);
     })
   );

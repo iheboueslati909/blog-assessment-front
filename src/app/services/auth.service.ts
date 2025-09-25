@@ -119,4 +119,8 @@ export class AuthService {
     const user = this.currentUserSubject.value;
     return !!user && roles.some(r => user.roles.includes(r));
   }
+
+  getCurrentUserId(): string {
+    return this.currentUserSubject.value?.id || "";
+  }
 }

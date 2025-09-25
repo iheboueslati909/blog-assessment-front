@@ -1,39 +1,59 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
+import { io, Socket } from 'socket.io-client';
 import { BehaviorSubject, Observable } from 'rxjs';
 
-export interface NotificationItem {
-  id: string;
+interface NotificationPayload {
+  type: string;
+  articleId: string;
+  commentId: string;
   message: string;
-  read?: boolean;
-  createdAt: string;
 }
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root'
+})
 export class NotificationService {
-  private itemsSubject = new BehaviorSubject<NotificationItem[]>([]);
-  items$ = this.itemsSubject.asObservable();
+  private socket!: Socket;
+  private notifications$ = new BehaviorSubject<NotificationPayload | null>(null);
 
-  list(): NotificationItem[] {
-    return this.itemsSubject.value;
+  constructor(private zone: NgZone) {}
+
+  connect(token: string) {
+    if (this.socket && this.socket.connected) {
+      return;
+    }
+
+    this.socket = io('http://localhost:3003', {
+      auth: {
+        token: `Bearer ${token}`
+      },
+      transports: ['websocket'] // force WS for cleaner behavior
+    });
+
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Notification service');
+    });
+
+    this.socket.on('notification', (payload: NotificationPayload) => {
+      // Run inside Angular zone so UI updates
+      this.zone.run(() => {
+        console.log('📩 Notification:', payload);
+        this.notifications$.next(payload);
+      });
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('❌ Disconnected from Notification service');
+    });
   }
 
-  add(message: string) {
-    const item: NotificationItem = {
-      id: Math.random().toString(36).slice(2, 9),
-      message,
-      read: false,
-      createdAt: new Date().toISOString(),
-    };
-    this.itemsSubject.next([item, ...this.itemsSubject.value]);
+  get notifications(): Observable<NotificationPayload | null> {
+    return this.notifications$.asObservable();
   }
 
-  markRead(id: string) {
-    const updated = this.itemsSubject.value.map((i) => (i.id === id ? { ...i, read: true } : i));
-    this.itemsSubject.next(updated);
-  }
-
-  markAllRead() {
-    const updated = this.itemsSubject.value.map((i) => ({ ...i, read: true }));
-    this.itemsSubject.next(updated);
+  disconnect() {
+    if (this.socket) {
+      this.socket.disconnect();
+    }
   }
 }

@@ -3,16 +3,20 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArticleService } from '../../services/article.service';
 import { Article } from '../../models/article.model';
+import { ArticleComment } from '../../models/comment.model';
 import { AuthService } from '../../services/auth.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   standalone: true,
   selector: 'article-detail',
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './article-detail.component.html',
 })
 export class ArticleDetailComponent implements OnInit {
   article: Article | null = null;
+  comments: ArticleComment[] = [];
+  newCommentContent = '';
   loading = false;
   error: string | null = null;
 
@@ -26,19 +30,13 @@ export class ArticleDetailComponent implements OnInit {
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id'); 
-    if (!id) {
-      this.error = 'No article ID provided';
-      return;
-    }
-
-    if (id === 'new') {
+    if (!id || id === 'new') {
       this.router.navigate(['/articles', 'new']);
       return;
     }
 
-
-
     this.load(id);
+    this.loadComments(id);
   }
 
   load(id: string) {
@@ -47,21 +45,47 @@ export class ArticleDetailComponent implements OnInit {
     this.cdRef.detectChanges();
 
     this.svc.get(id).subscribe({
-      next: (res) => {
+      next: res => {
         this.article = res;
         this.loading = false;
         this.cdRef.detectChanges();
       },
-      error: (err) => {
+      error: err => {
         this.error = err?.error?.message || err?.message || 'Failed to load article';
         this.loading = false;
         this.cdRef.detectChanges();
       },
     });
+  }
 
-    this.auth.currentUser$.subscribe(user => {
-  console.log('AuthService currentUser$ updated:', user);
-});
+  loadComments(articleId: string) {
+    this.svc.getComments(articleId).subscribe({
+      next: res => {
+        this.comments = res;
+        this.cdRef.detectChanges();
+      },
+      error: err => console.error('Failed to load comments', err)
+    });
+  }
+
+  addComment(parentCommentId?: string) {
+    if (!this.article || !this.newCommentContent.trim()) return;
+
+    const comment: Partial<ArticleComment> = {
+      articleId: this.article._id!,
+      authorId: this.auth.getCurrentUserId(),
+      content: this.newCommentContent,
+      parentCommentId
+    };
+
+    this.svc.createComment(comment).subscribe({
+      next: res => {
+        this.comments.unshift(res);
+        this.newCommentContent = '';
+        this.cdRef.detectChanges();
+      },
+      error: err => alert(err?.error?.message || 'Failed to post comment')
+    });
   }
 
   canEdit(): boolean {
@@ -72,7 +96,7 @@ export class ArticleDetailComponent implements OnInit {
     return this.auth.hasRole('Admin');
   }
 
-  edit() {
+    edit() {
     if (!this.article?._id || !this.canEdit()) return;
     this.router.navigate(['/articles', this.article._id, 'edit']);
   }

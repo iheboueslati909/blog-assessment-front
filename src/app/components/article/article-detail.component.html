@@ -25,6 +25,26 @@
       <button routerLink="/articles" class="px-3 py-1.5 bg-gray-700 text-white rounded">Back</button>
     </div>
   </div>
+
+  <!-- Article content here ... -->
+
+<h2 class="mt-8 text-xl font-bold">Comments</h2>
+
+<!-- Add new comment -->
+<div class="my-4">
+  <textarea [(ngModel)]="newCommentContent" rows="3" class="w-full border rounded p-2"></textarea>
+  <button (click)="addComment()" class="mt-2 px-3 py-1.5 bg-blue-600 text-white rounded">Post Comment</button>
+</div>
+
+<!-- List comments -->
+<div *ngFor="let c of comments" class="border-b py-2">
+  <p class="text-sm text-gray-500">{{ c.authorId }} | {{ c.createdAt | date:'short' }}</p>
+  <p>{{ c.content }}</p>
+
+  <!-- Reply button -->
+  <button class="text-blue-500 text-sm mt-1" (click)="newCommentContent=''; addComment(c._id)">Reply</button>
+</div>
+
 </div>
 
 <div *ngIf="loading" class="p-6 text-gray-400">Loading...</div>

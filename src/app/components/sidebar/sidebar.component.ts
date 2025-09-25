@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { NotificationService } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -39,24 +40,54 @@ import { AuthService } from '../../services/auth.service';
     </aside>
   `
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit, OnDestroy {
+  notifications: Array<any> = [];
+  private sub?: Subscription;
 
   constructor(private notif: NotificationService, private auth: AuthService) {}
 
-  get notifications() {
-    return this.notif.list();
+  ngOnInit(): void {
+    // If user already has a token (e.g. after login), connect the socket
+    const token = this.auth.getAccessToken();
+    if (token) {
+      this.notif.connect(token);
+    }
+
+    // Subscribe to incoming notifications and push them into local list
+    this.sub = this.notif.notifications.subscribe((payload) => {
+      if (!payload) return;
+
+      // Keep a simple local representation. Adjust shape as needed.
+      this.notifications = [
+        {
+          id: payload.commentId || payload.articleId || Math.random().toString(36).slice(2),
+          message: payload.message,
+          createdAt: new Date(),
+          read: false,
+        },
+        ...this.notifications,
+      ];
+    });
   }
 
   markRead(id: string) {
-    this.notif.markRead(id);
+    // For the new NotificationService we don't have markRead API in the provided file.
+    // Implement local mark behavior so UI updates immediately.
+    this.notifications = this.notifications.map(n => n.id === id ? { ...n, read: true } : n);
   }
 
   markAll() {
-    this.notif.markAllRead();
+    this.notifications = this.notifications.map(n => ({ ...n, read: true }));
   }
 
   logout() {
+    this.notif.disconnect();
     this.auth.logout();
+  }
+
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+    this.notif.disconnect();
   }
 }
 

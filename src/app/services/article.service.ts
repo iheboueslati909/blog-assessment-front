@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Article, ArticleCreateRequest, ArticleUpdateRequest } from '../models/article.model';
+import { ArticleComment } from '../models/comment.model';
 import { AuthService } from './auth.service';
 
 @Injectable({
@@ -43,5 +44,15 @@ export class ArticleService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/${id}`, this.authHeaders());
+  }
+
+  getComments(articleId: string, parentCommentId?: string, page = 1, limit = 20): Observable<ArticleComment[]> {
+    const params: any = { page, limit };
+    if (parentCommentId) params.parentCommentId = parentCommentId;
+  return this.http.get<ArticleComment[]>(`${this.API_URL}/${articleId}/comments`, { params });
+  }
+
+  createComment(comment: Partial<ArticleComment>): Observable<ArticleComment> {
+    return this.http.post<ArticleComment>(`${this.API_URL}/${comment.articleId}/comments`, comment);
   }
 }
