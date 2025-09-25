@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArticleService } from '../../services/article.service';
 import { Article } from '../../models/article.model';
-import { ArticleComment } from '../../models/comment.model';
+import { ArticleComment, PaginatedComments } from '../../models/comment.model';
 import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
 
@@ -16,20 +16,29 @@ import { FormsModule } from '@angular/forms';
 export class ArticleDetailComponent implements OnInit {
   article: Article | null = null;
   comments: ArticleComment[] = [];
+  // pagination / metadata returned by the backend
+  commentsPage = 1;
+  commentsLimit = 20;
+  commentsTotalTopLevel = 0;
   newCommentContent = '';
   loading = false;
   error: string | null = null;
+  replyOpenFor: Record<string, boolean> = {};
+  replyContent: Record<string, string> = {};
+
 
   constructor(
-    private route: ActivatedRoute, 
-    private svc: ArticleService, 
+    private route: ActivatedRoute,
+    private svc: ArticleService,
     private router: Router,
     private cdRef: ChangeDetectorRef,
     private auth: AuthService
-  ) {}
+  ) { }
+
+
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id'); 
+    const id = this.route.snapshot.paramMap.get('id');
     if (!id || id === 'new') {
       this.router.navigate(['/articles', 'new']);
       return;
@@ -58,10 +67,20 @@ export class ArticleDetailComponent implements OnInit {
     });
   }
 
+  toggleReplyBox(commentId: string) {
+    this.replyOpenFor[commentId] = !this.replyOpenFor[commentId];
+    if (this.replyOpenFor[commentId] && !this.replyContent[commentId]) {
+      this.replyContent[commentId] = '';
+    }
+  }
+
   loadComments(articleId: string) {
-    this.svc.getComments(articleId).subscribe({
-      next: res => {
-        this.comments = res;
+    this.svc.getComments(articleId, this.commentsPage, this.commentsLimit).subscribe({
+      next: (res: PaginatedComments) => {
+        this.comments = res.comments || [];
+        this.commentsPage = res.page || this.commentsPage;
+        this.commentsLimit = res.limit || this.commentsLimit;
+        this.commentsTotalTopLevel = res.totalTopLevel || 0;
         this.cdRef.detectChanges();
       },
       error: err => console.error('Failed to load comments', err)
@@ -69,23 +88,67 @@ export class ArticleDetailComponent implements OnInit {
   }
 
   addComment(parentCommentId?: string) {
-    if (!this.article || !this.newCommentContent.trim()) return;
+    if (!this.article) return;
+
+    const content = parentCommentId
+      ? this.replyContent[parentCommentId]?.trim()
+      : this.newCommentContent.trim();
+
+    if (!content) return;
 
     const comment: Partial<ArticleComment> = {
       articleId: this.article._id!,
       authorId: this.auth.getCurrentUserId(),
-      content: this.newCommentContent,
+      content,
       parentCommentId
     };
 
     this.svc.createComment(comment).subscribe({
       next: res => {
-        this.comments.unshift(res);
-        this.newCommentContent = '';
+        // Add to the correct place. Backend returns the created comment. If it's a reply,
+        // attach it to the parent's replies array anywhere in the tree. Otherwise add to top-level comments.
+        if (parentCommentId) {
+          const parent = this.findCommentById(parentCommentId, this.comments);
+          if (parent) {
+            parent.replies = parent.replies || [];
+            parent.replies.unshift(res);
+          } else {
+            // If parent not found in current page/tree, reload top-level comments
+            this.loadComments(this.article!._id!);
+          }
+          this.replyContent[parentCommentId] = '';
+          this.replyOpenFor[parentCommentId] = false;
+        } else {
+          // Top-level comment
+          this.comments.unshift(res);
+          this.newCommentContent = '';
+        }
+
+        if (parentCommentId) {
+          this.replyContent[parentCommentId] = '';
+          this.replyOpenFor[parentCommentId] = false;
+        } else {
+          this.newCommentContent = '';
+        }
+
         this.cdRef.detectChanges();
       },
       error: err => alert(err?.error?.message || 'Failed to post comment')
     });
+  }
+
+  /**
+   * Recursively find a comment by id in the comments tree.
+   */
+  private findCommentById(id: string, list: ArticleComment[]): ArticleComment | undefined {
+    for (const c of list) {
+      if (c._id === id) return c;
+      if (c.replies && c.replies.length) {
+        const found = this.findCommentById(id, c.replies);
+        if (found) return found;
+      }
+    }
+    return undefined;
   }
 
   canEdit(): boolean {
@@ -96,7 +159,7 @@ export class ArticleDetailComponent implements OnInit {
     return this.auth.hasRole('Admin');
   }
 
-    edit() {
+  edit() {
     if (!this.article?._id || !this.canEdit()) return;
     this.router.navigate(['/articles', this.article._id, 'edit']);
   }
@@ -108,5 +171,10 @@ export class ArticleDetailComponent implements OnInit {
       next: () => this.router.navigate(['/articles']),
       error: (err) => alert(err?.error?.message || err?.message || 'Delete failed'),
     });
+  }
+
+  getReplies(parentId: string) {
+    const parent = this.comments.find(c => c._id === parentId);
+    return parent?.replies || [];
   }
 }
