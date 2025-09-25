@@ -51,15 +51,13 @@ export class AuthService {
       tap(res => {
         this.accessToken = res.accessToken;
 
-        // Decode JWT
+        // Decode JWT and set current user
         const payload = jwtDecode<JwtPayload>(res.accessToken);
-
-        // Build minimal User object from JWT
         const user: User = {
           id: payload.sub,
           roles: payload.roles,
-          name: '', // optional, if backend doesn’t send it
-          email: '' // optional
+          name: '',
+          email: ''
         };
 
         this.currentUserSubject.next(user);
@@ -67,9 +65,6 @@ export class AuthService {
       map(() => this.currentUserSubject.value!)
     );
   }
-
-
-
 
   register(data: RegisterRequest): Observable<User> {
     return this.http
@@ -93,6 +88,18 @@ export class AuthService {
     return this.http.post<{ accessToken: string }>(`${this.API_URL}/refresh`, {}, { withCredentials: true }).pipe(
       tap((res) => {
         this.accessToken = res.accessToken;
+        
+        // Decode JWT and set current user
+        const payload = jwtDecode<JwtPayload>(res.accessToken);
+        const user: User = {
+          id: payload.sub,
+          roles: payload.roles,
+          name: '',
+          email: ''
+        };
+
+        this.currentUserSubject.next(user);
+
       }),
       map((res) => res.accessToken),
     );

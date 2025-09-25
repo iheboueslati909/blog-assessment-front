@@ -16,6 +16,7 @@ import { Observable } from 'rxjs';
       <nav class="space-y-2">
         <a routerLink="/articles" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">Articles</a>
         <a routerLink="/articles/new" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">New Article</a>
+        <a *ngIf="auth.hasRole('Admin')" routerLink="/admin/users" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">Manage Users</a>
       </nav>
 
       <section class="mt-6">
@@ -43,7 +44,7 @@ import { Observable } from 'rxjs';
 export class SidebarComponent implements OnInit {
   notifications$!: Observable<Notification[]>;
 
-  constructor(private notif: NotificationService, private auth: AuthService) {}
+  constructor(private notif: NotificationService, public auth: AuthService) {}
 
   ngOnInit(): void {
     const token = this.auth.getAccessToken();

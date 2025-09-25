@@ -13,11 +13,10 @@ export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   if (authService.isAuthenticated()) {
     if (!requiredRoles || authService.hasAnyRole(requiredRoles)) {
       return true;
-    }
+    } 
     router.navigate(['/forbidden']);
     return false;
   }
-
   return authService.refreshToken().pipe(
     map((newToken) => {
       if (newToken) {

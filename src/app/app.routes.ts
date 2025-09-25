@@ -38,6 +38,17 @@ export const routes: Routes = [
       }
     ],
   },
+  {
+    path: 'admin',
+    canActivate: [authGuard],
+    data: { roles: ['Admin'] },
+    children: [
+      {
+        path: 'users',
+        loadComponent: () => import('./components/user/manage-users.component').then(m => m.ManageUsersComponent)
+      }
+    ]
+  },
   { path: '', redirectTo: '/articles', pathMatch: 'full' },
   { path: '**', redirectTo: '/articles' }
 ];
