@@ -1,9 +1,9 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { NotificationService } from '../../services/notification.service';
+import { NotificationService, Notification } from '../../services/notification.service';
 import { AuthService } from '../../services/auth.service';
-import { Subscription } from 'rxjs';
+import { Observable } from 'rxjs';
 
 @Component({
   standalone: true,
@@ -24,7 +24,7 @@ import { Subscription } from 'rxjs';
           <button (click)="markAll()" class="text-blue-400 hover:text-blue-300 text-xs">Mark all</button>
         </div>
         <ul class="mt-3 space-y-2">
-          <li *ngFor="let n of notifications" class="p-2 rounded bg-gray-800">
+          <li *ngFor="let n of notifications$ | async" class="p-2 rounded bg-gray-800">
             <div class="text-sm" [class.font-semibold]="!n.read">{{ n.message }}</div>
             <div class="text-xs text-gray-400 mt-1 flex items-center justify-between">
               <small>{{ n.createdAt | date:'short' }}</small>
@@ -40,55 +40,30 @@ import { Subscription } from 'rxjs';
     </aside>
   `
 })
-export class SidebarComponent implements OnInit, OnDestroy {
-  notifications: Array<any> = [];
-  private sub?: Subscription;
+export class SidebarComponent implements OnInit {
+  notifications$!: Observable<Notification[]>;
 
   constructor(private notif: NotificationService, private auth: AuthService) {}
 
   ngOnInit(): void {
-    // If user already has a token (e.g. after login), connect the socket
     const token = this.auth.getAccessToken();
     if (token) {
       this.notif.connect(token);
     }
 
-    // Subscribe to incoming notifications and push them into local list
-    this.sub = this.notif.notifications.subscribe((payload) => {
-      if (!payload) return;
-
-      // Keep a simple local representation. Adjust shape as needed.
-      this.notifications = [
-        {
-          id: payload.commentId || payload.articleId || Math.random().toString(36).slice(2),
-          message: payload.message,
-          createdAt: new Date(),
-          read: false,
-        },
-        ...this.notifications,
-      ];
-    });
+    this.notifications$ = this.notif.notifications;
   }
 
   markRead(id: string) {
-    // For the new NotificationService we don't have markRead API in the provided file.
-    // Implement local mark behavior so UI updates immediately.
-    this.notifications = this.notifications.map(n => n.id === id ? { ...n, read: true } : n);
+    this.notif.markRead(id);
   }
 
   markAll() {
-    this.notifications = this.notifications.map(n => ({ ...n, read: true }));
+    this.notif.markAll();
   }
 
   logout() {
     this.notif.disconnect();
     this.auth.logout();
   }
-
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe();
-    this.notif.disconnect();
-  }
 }
-
-export default SidebarComponent;
