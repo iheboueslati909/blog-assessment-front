@@ -1,26 +1,34 @@
 import { inject } from '@angular/core';
-import { CanActivateFn, Router } from '@angular/router';
+import { CanActivateFn, Router, ActivatedRouteSnapshot } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
-export const authGuard: CanActivateFn = () => {
+export const authGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
+  const requiredRoles = route.data['roles'] as string[] | undefined;
+
   if (authService.isAuthenticated()) {
-    return true;
+    if (!requiredRoles || authService.hasAnyRole(requiredRoles)) {
+      return true;
+    }
+    router.navigate(['/forbidden']);
+    return false;
   }
 
-  // Try silent refresh if no access token in memory
   return authService.refreshToken().pipe(
     map((newToken) => {
       if (newToken) {
-        return true;
-      } else {
-        router.navigate(['/login']);
+        if (!requiredRoles || authService.hasAnyRole(requiredRoles)) {
+          return true;
+        }
+        router.navigate(['/forbidden']);
         return false;
       }
+      router.navigate(['/login']);
+      return false;
     }),
     catchError(() => {
       router.navigate(['/login']);

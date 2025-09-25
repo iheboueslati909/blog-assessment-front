@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, map, tap } from 'rxjs';
 import { User } from '../models/user.model';
+import { jwtDecode } from 'jwt-decode';
 
 export interface LoginRequest {
   email: string;
@@ -17,7 +18,18 @@ export interface RegisterRequest {
 
 interface LoginResponse {
   accessToken: string;
-  user: User;
+}
+
+interface RegisterResponse {
+  user: {
+    name: string;
+    email: string;
+    roles: string[];
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+    id: string;
+  };
 }
 
 @Injectable({
@@ -36,22 +48,38 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<User> {
     return this.http.post<LoginResponse>(`${this.API_URL}/login`, credentials, { withCredentials: true }).pipe(
-      tap((res) => {
+      tap(res => {
         this.accessToken = res.accessToken;
-        this.currentUserSubject.next(res.user);
+
+        // Decode JWT
+        const payload = jwtDecode<JwtPayload>(res.accessToken);
+
+        // Build minimal User object from JWT
+        const user: User = {
+          id: payload.sub,
+          roles: payload.roles,
+          name: '', // optional, if backend doesn’t send it
+          email: '' // optional
+        };
+
+        this.currentUserSubject.next(user);
       }),
-      map((res) => res.user)
+      map(() => this.currentUserSubject.value!)
     );
   }
 
+
+
+
   register(data: RegisterRequest): Observable<User> {
-    return this.http.post<LoginResponse>(`${this.API_URL}/register`, data, { withCredentials: true }).pipe(
-      tap((res) => {
-        this.accessToken = res.accessToken;
-        this.currentUserSubject.next(res.user);
-      }),
-      map((res) => res.user)
-    );
+    return this.http
+      .post<RegisterResponse>(`${this.API_URL}/register`, data, { withCredentials: true })
+      .pipe(
+        tap((res) => {
+          this.currentUserSubject.next(res.user);
+        }),
+        map((res) => res.user)
+      );
   }
 
   logout(): void {
@@ -77,8 +105,18 @@ export class AuthService {
   isAuthenticated(): boolean {
     return !!this.accessToken;
   }
-  
+
   getCurrentUser(): User | null {
     return this.currentUserSubject.value;
+  }
+
+  hasRole(role: string): boolean {
+    const user = this.currentUserSubject.value;
+    return !!user && user.roles.includes(role);
+  }
+
+  hasAnyRole(roles: string[]): boolean {
+    const user = this.currentUserSubject.value;
+    return !!user && roles.some(r => user.roles.includes(r));
   }
 }
