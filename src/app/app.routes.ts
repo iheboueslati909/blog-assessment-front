@@ -10,18 +10,34 @@ export const routes: Routes = [
     path: 'register', 
     loadComponent: () => import('./components/register/register.component').then(m => m.RegisterComponent) 
   },
- {
-  path: 'articles',
-  canActivate: [authGuard],
-  children: [
-    { path: '', loadComponent: () => import('./components/article/article-list.component').then(m => m.ArticleListComponent) },
-    { path: 'new', loadComponent: () => import('./components/article/article-form.component').then(m => m.ArticleFormComponent) },
-    { path: ':id', loadComponent: () => import('./components/article/article-detail.component').then(m => m.ArticleDetailComponent) },
-    { path: ':id/edit', loadComponent: () => import('./components/article/article-form.component').then(m => m.ArticleFormComponent) },
-  ],
-}
-,
-  
+  {
+    path: 'articles',
+    canActivate: [authGuard],
+    children: [
+      // List articles - any authenticated user
+      { 
+        path: '', 
+        loadComponent: () => import('./components/article/article-list.component').then(m => m.ArticleListComponent) 
+      },
+      // Create new article - any authenticated user
+      { 
+        path: 'new', 
+        loadComponent: () => import('./components/article/article-form.component').then(m => m.ArticleFormComponent) 
+      },
+      // View article details - any authenticated user
+      { 
+        path: ':id', 
+        loadComponent: () => import('./components/article/article-detail.component').then(m => m.ArticleDetailComponent) 
+      },
+      // Edit article - only Editor or Admin
+      { 
+        path: ':id/edit', 
+        loadComponent: () => import('./components/article/article-form.component').then(m => m.ArticleFormComponent),
+        canActivate: [authGuard],
+        data: { roles: ['Editor', 'Admin'] }
+      }
+    ],
+  },
   { path: '', redirectTo: '/articles', pathMatch: 'full' },
   { path: '**', redirectTo: '/articles' }
 ];
