@@ -1,0 +1,16 @@
+<div class="article-detail" *ngIf="!loading">
+  <div *ngIf="error" class="error">{{ error }}</div>
+  <div *ngIf="article">
+    <h1>{{ article.title }}</h1>
+    <p class="meta">By {{ article.authorId }} • {{ article.createdAt | date }}</p>
+    <img *ngIf="article.image" [src]="article.image" alt="article image" />
+    <div class="content" [innerHTML]="article.content"></div>
+
+    <div class="controls">
+      <button (click)="edit()">Edit</button>
+      <button (click)="remove()">Delete</button>
+      <button routerLink="/articles">Back</button>
+    </div>
+  </div>
+</div>
+<div *ngIf="loading">Loading...</div>

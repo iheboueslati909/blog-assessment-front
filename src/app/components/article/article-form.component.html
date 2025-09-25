@@ -1,0 +1,32 @@
+<div class="article-form">
+  <h2>{{ editingId ? 'Edit Article' : 'New Article' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <label>
+      Title
+      <input formControlName="title" />
+    </label>
+
+    <label>
+      Image URL
+      <input formControlName="image" />
+    </label>
+
+    <label>
+      Tags (comma separated)
+      <input formControlName="tags" />
+    </label>
+
+    <label>
+      Content
+      <textarea rows="10" formControlName="content"></textarea>
+    </label>
+
+    <div class="actions">
+      <button type="submit" [disabled]="loading">Save</button>
+      <button type="button" routerLink="/articles">Cancel</button>
+    </div>
+  </form>
+
+  <div *ngIf="error" class="error">{{ error }}</div>
+</div>

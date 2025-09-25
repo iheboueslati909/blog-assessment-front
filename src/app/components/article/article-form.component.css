@@ -1,0 +1,43 @@
+.article-form {
+  padding: 1.25rem;
+  background: rgba(20, 40, 50, 0.85);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+label {
+  display: block;
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.6rem;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f7f7f7;
+  font-family: inherit;
+  transition: border 0.2s, background 0.2s;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #64b5f6;
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.actions {
+  margin-top: 1.25rem;
+}
+
+.error {
+  color: #ef5350;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
