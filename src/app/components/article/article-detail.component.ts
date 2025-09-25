@@ -6,6 +6,8 @@ import { Article } from '../../models/article.model';
 import { ArticleComment, PaginatedComments } from '../../models/comment.model';
 import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
+import { environment } from '../../../environments/environment';
+import { ImageService } from '../../services/image.service';
 
 @Component({
   standalone: true,
@@ -16,7 +18,6 @@ import { FormsModule } from '@angular/forms';
 export class ArticleDetailComponent implements OnInit {
   article: Article | null = null;
   comments: ArticleComment[] = [];
-  // pagination / metadata returned by the backend
   commentsPage = 1;
   commentsLimit = 20;
   commentsTotalTopLevel = 0;
@@ -26,6 +27,7 @@ export class ArticleDetailComponent implements OnInit {
   replyOpenFor: Record<string, boolean> = {};
   replyContent: Record<string, string> = {};
 
+  private apiBaseUrl = environment.apiUrl;
 
   constructor(
     private route: ActivatedRoute,
@@ -33,9 +35,8 @@ export class ArticleDetailComponent implements OnInit {
     private router: Router,
     private cdRef: ChangeDetectorRef,
     private auth: AuthService
+    , private imageSvc: ImageService
   ) { }
-
-
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
@@ -46,6 +47,16 @@ export class ArticleDetailComponent implements OnInit {
 
     this.load(id);
     this.loadComments(id);
+  }
+
+  getImageUrl(imagePath: string | null | undefined): string {
+    console.log(this.imageSvc.getImageUrl(imagePath))
+    return this.imageSvc.getImageUrl(imagePath);
+  }
+
+  onImageError(event: Event) {
+    const target = event.target as HTMLImageElement;
+    target.src = 'assets/images/fallback.jpg';
   }
 
   load(id: string) {
@@ -105,21 +116,17 @@ export class ArticleDetailComponent implements OnInit {
 
     this.svc.createComment(comment).subscribe({
       next: res => {
-        // Add to the correct place. Backend returns the created comment. If it's a reply,
-        // attach it to the parent's replies array anywhere in the tree. Otherwise add to top-level comments.
         if (parentCommentId) {
           const parent = this.findCommentById(parentCommentId, this.comments);
           if (parent) {
             parent.replies = parent.replies || [];
             parent.replies.unshift(res);
           } else {
-            // If parent not found in current page/tree, reload top-level comments
             this.loadComments(this.article!._id!);
           }
           this.replyContent[parentCommentId] = '';
           this.replyOpenFor[parentCommentId] = false;
         } else {
-          // Top-level comment
           this.comments.unshift(res);
           this.newCommentContent = '';
         }
@@ -137,9 +144,6 @@ export class ArticleDetailComponent implements OnInit {
     });
   }
 
-  /**
-   * Recursively find a comment by id in the comments tree.
-   */
   private findCommentById(id: string, list: ArticleComment[]): ArticleComment | undefined {
     for (const c of list) {
       if (c._id === id) return c;

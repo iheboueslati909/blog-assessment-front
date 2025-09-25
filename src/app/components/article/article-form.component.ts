@@ -17,11 +17,17 @@ export class ArticleFormComponent implements OnInit {
   error: string | null = null;
   editingId: string | null = null;
 
-  constructor(private fb: FormBuilder, private svc: ArticleService, private route: ActivatedRoute, private router: Router) {
+  private selectedFile: File | null = null; // store file reference
+
+  constructor(
+    private fb: FormBuilder,
+    private svc: ArticleService,
+    private route: ActivatedRoute,
+    private router: Router
+  ) {
     this.form = this.fb.group({
       title: ['', [Validators.required]],
       content: ['', [Validators.required]],
-      image: [''],
       tags: [''],
     });
   }
@@ -34,6 +40,13 @@ export class ArticleFormComponent implements OnInit {
     }
   }
 
+  onFileSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.selectedFile = input.files[0];
+    }
+  }
+
   load(id: string) {
     this.loading = true;
     this.svc.get(id).subscribe({
@@ -41,7 +54,6 @@ export class ArticleFormComponent implements OnInit {
         this.form.patchValue({
           title: a.title,
           content: a.content,
-          image: a.image || '',
           tags: (a.tags || []).join(', '),
         });
         this.loading = false;
@@ -61,14 +73,33 @@ export class ArticleFormComponent implements OnInit {
 
     this.loading = true;
     const raw = this.form.value;
-    const payload = {
-      title: raw.title,
-      content: raw.content,
-      image: raw.image || undefined,
-      tags: raw.tags ? raw.tags.split(',').map((s: string) => s.trim()).filter(Boolean) : [],
-    };
 
-    const obs = this.editingId ? this.svc.update(this.editingId, payload) : this.svc.create(payload as any);
+    // build FormData for file + fields
+    const formData = new FormData();
+    formData.append('title', raw.title);
+    formData.append('content', raw.content);
+
+    if (raw.tags) {
+      raw.tags
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean)
+        .forEach((tag: string) => formData.append('tags', tag));
+    }
+
+    if (this.selectedFile) {
+      formData.append('image', this.selectedFile);
+    }
+
+    // Debug: log the FormData entries
+for (const [key, value] of formData.entries()) {
+  console.log(key, value);
+}
+console.log('Submitting form data:', formData);
+    const obs = this.editingId
+      ? this.svc.update(this.editingId, formData)
+      : this.svc.create(formData);
+
     obs.subscribe({
       next: (res: Article) => {
         this.loading = false;
@@ -81,5 +112,3 @@ export class ArticleFormComponent implements OnInit {
     });
   }
 }
-
-export default ArticleFormComponent;
