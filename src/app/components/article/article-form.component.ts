@@ -10,7 +10,6 @@ import { Article } from '../../models/article.model';
   selector: 'article-form',
   imports: [CommonModule, ReactiveFormsModule, RouterModule],
   templateUrl: './article-form.component.html',
-  styleUrls: ['./article-form.component.css'],
 })
 export class ArticleFormComponent implements OnInit {
   form: FormGroup;

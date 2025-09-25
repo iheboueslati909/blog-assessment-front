@@ -9,12 +9,14 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
   standalone: true,
   imports: [CommonModule, RouterOutlet, SidebarComponent],
   template: `
-    <div class="app-shell">
-      <app-sidebar *ngIf="isAuthenticated()"></app-sidebar>
-      <div class="app-main">
-        <main class="content">
-          <router-outlet></router-outlet>
-        </main>
+    <div class="min-h-screen bg-gray-900 text-white">
+      <div class="flex">
+        <app-sidebar *ngIf="isAuthenticated()" class="hidden md:block"></app-sidebar>
+        <div class="flex-1 p-4">
+          <main class="max-w-5xl mx-auto">
+            <router-outlet></router-outlet>
+          </main>
+        </div>
       </div>
     </div>
   `

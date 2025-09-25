@@ -50,7 +50,7 @@
 
     <div class="error" *ngIf="error">{{ error }}</div>
 
-    <button type="submit" [disabled]="loading">
+    <button type="submit" class="btn-primary" [disabled]="loading">
       {{ loading ? 'Registering...' : 'Register' }}
     </button>
   </form>

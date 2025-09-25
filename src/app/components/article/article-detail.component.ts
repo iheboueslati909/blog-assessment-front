@@ -9,7 +9,6 @@ import { Article } from '../../models/article.model';
   selector: 'article-detail',
   imports: [CommonModule, RouterModule],
   templateUrl: './article-detail.component.html',
-  styleUrls: ['./article-detail.component.css'],
 })
 export class ArticleDetailComponent implements OnInit {
   article: Article | null = null;

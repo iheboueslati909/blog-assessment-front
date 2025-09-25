@@ -9,32 +9,35 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-sidebar',
   imports: [CommonModule, RouterModule],
   template: `
-    <aside class="sidebar">
-      <div class="brand">My Blog</div>
-      <nav>
-        <a routerLink="/articles" class="nav-link">Articles</a>
-        <a routerLink="/articles/new" class="nav-link">New Article</a>
+    <aside class="w-64 min-h-screen bg-gray-900 p-4 border-r border-gray-800">
+      <div class="text-white font-bold text-lg mb-6">My Blog</div>
+
+      <nav class="space-y-2">
+        <a routerLink="/articles" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">Articles</a>
+        <a routerLink="/articles/new" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">New Article</a>
       </nav>
 
-      <section class="notifications">
-        <h4>Notifications <button (click)="markAll()" class="link-btn">Mark all read</button></h4>
-        <ul>
-          <li *ngFor="let n of notifications">
-            <div class="msg" [class.unread]="!n.read">{{ n.message }}</div>
-            <div class="meta">
+      <section class="mt-6">
+        <div class="flex items-center justify-between text-sm text-gray-300">
+          <h4 class="font-semibold">Notifications</h4>
+          <button (click)="markAll()" class="text-blue-400 hover:text-blue-300 text-xs">Mark all</button>
+        </div>
+        <ul class="mt-3 space-y-2">
+          <li *ngFor="let n of notifications" class="p-2 rounded bg-gray-800">
+            <div class="text-sm" [class.font-semibold]="!n.read">{{ n.message }}</div>
+            <div class="text-xs text-gray-400 mt-1 flex items-center justify-between">
               <small>{{ n.createdAt | date:'short' }}</small>
-              <button (click)="markRead(n.id)" *ngIf="!n.read">Mark read</button>
+              <button (click)="markRead(n.id)" *ngIf="!n.read" class="text-xs text-blue-400">Mark</button>
             </div>
           </li>
         </ul>
       </section>
 
-      <div class="footer">
-        <button (click)="logout()">Logout</button>
+      <div class="mt-6 text-sm text-gray-400">
+        <button (click)="logout()" class="w-full text-left px-3 py-2 rounded bg-gray-800 hover:bg-gray-700">Logout</button>
       </div>
     </aside>
-  `,
-  styleUrls: ['./sidebar.component.css'],
+  `
 })
 export class SidebarComponent {
 

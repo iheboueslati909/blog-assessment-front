@@ -1,5 +1,2 @@
-.article-detail { padding:1rem }
-.meta { color:#666 }
-.content { margin-top:1rem }
-.controls { margin-top:1rem }
-.error { color:crimson }
+/* Tailwind handles styling; keep file empty to avoid conflicts */
+
