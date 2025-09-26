@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ArticleService } from '../../services/article.service';
 import { Article } from '../../models/article.model';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   standalone: true,
@@ -24,6 +25,7 @@ export class ArticleFormComponent implements OnInit {
     private svc: ArticleService,
     private route: ActivatedRoute,
     private router: Router
+    , private toastr: ToastrService
   ) {
     this.form = this.fb.group({
       title: ['', [Validators.required]],
@@ -103,10 +105,12 @@ console.log('Submitting form data:', formData);
     obs.subscribe({
       next: (res: Article) => {
         this.loading = false;
+        this.toastr.success('Article saved', 'Success');
         this.router.navigate(['/articles', res._id]);
       },
       error: (err) => {
         this.loading = false;
+        this.toastr.error(err?.error?.message || err?.message || 'Save failed', 'Error');
         this.error = err?.error?.message || err?.message || 'Save failed';
       },
     });

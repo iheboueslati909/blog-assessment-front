@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "ngx-toastr/toastr";
 
 /* Global styles */
 html, body {
@@ -358,4 +359,32 @@ body {
 /* Smooth scroll */
 html {
 	scroll-behavior: smooth;
+}
+
+/* ===== PAGE TITLE / TYPOGRAPHY ===== */
+/* Use consistent page header and subtitle styles across the app */
+.page-title {
+	font-size: 1.75rem; /* 28px */
+	line-height: 1.2;
+	font-weight: 700;
+	margin: 0 0 0.75rem 0;
+	color: #ffffff;
+}
+
+.page-subtitle {
+	font-size: 1rem; /* 16px */
+	line-height: 1.4;
+	font-weight: 600;
+	margin: 0 0 1rem 0;
+	color: rgba(247,247,247,0.85);
+}
+
+/* larger display title for special pages (article detail) */
+.page-title--large {
+	font-size: 2rem; /* 32px */
+}
+
+@media (min-width: 1024px) {
+	.page-title { font-size: 2rem; }
+	.page-subtitle { font-size: 1.125rem; }
 }

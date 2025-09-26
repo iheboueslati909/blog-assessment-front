@@ -11,7 +11,7 @@ import { Observable } from 'rxjs';
   imports: [CommonModule, RouterModule],
   template: `
     <aside class="w-64 min-h-screen bg-gray-900 p-4 border-r border-gray-800">
-      <div class="text-white font-bold text-lg mb-6">My Blog</div>
+      <div class="text-white font-bold text-lg mb-6">Blogger</div>
 
       <nav class="space-y-2">
         <a routerLink="/articles" class="block px-3 py-2 rounded text-gray-300 hover:bg-gray-800">Articles</a>

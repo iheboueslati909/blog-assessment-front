@@ -5,6 +5,7 @@ import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
 import { PaginatedUsers } from '../../models/user.model';
 import { timeout } from 'rxjs/operators';
+import { ToastrService } from 'ngx-toastr';
 
 @Component({
   standalone: true,
@@ -28,6 +29,7 @@ export class ManageUsersComponent implements OnInit {
     private svc: UserService,
     private auth: AuthService,
     private cdRef: ChangeDetectorRef
+    , private toastr: ToastrService
   ) {}
 
   ngOnInit(): void {
@@ -74,10 +76,12 @@ export class ManageUsersComponent implements OnInit {
     this.svc.updateUserRoles(user._id, [newRole]).subscribe({
       next: () => {
         user.roles = [newRole]; // replace array with single role
+        this.toastr.success('User role updated', 'Success');
         this.cdRef.detectChanges();
       },
       error: () => {
         user.pendingRole = user.roles?.[0] || null; // revert
+        this.toastr.error('Failed to update user role', 'Error');
         this.cdRef.detectChanges();
       }
     });
